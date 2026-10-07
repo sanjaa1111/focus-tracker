@@ -1,0 +1,1142 @@
+<!DOCTYPE html>
+<html lang="mn">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="theme-color" content="#111827">
+<link rel="manifest" href="/manifest.json">
+<title>06:00 Focus Tracker V6</title>
+<style>
+:root{
+  --bg:#f4f6f8; --card:#ffffff; --text:#172033; --muted:#667085;
+  --line:#e5e7eb; --primary:#111827; --accent:#2563eb; --green:#16a34a;
+  --yellow:#ca8a04; --red:#dc2626; --soft:#eef2ff; --shadow:0 6px 24px rgba(15,23,42,.07);
+}
+*{box-sizing:border-box}
+html,body{margin:0;padding:0;background:var(--bg);color:var(--text);font-family:system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Noto Sans",Arial,sans-serif}
+body{padding-bottom:calc(80px + env(safe-area-inset-bottom))}
+button,input,select{font:inherit}
+button{cursor:pointer}
+.app{max-width:900px;margin:0 auto;padding:16px}
+.header{background:linear-gradient(135deg,#111827,#273449);color:white;border-radius:22px;padding:20px;box-shadow:var(--shadow);position:relative;overflow:hidden}
+.header h1{font-size:23px;margin:0 0 6px}
+.header p{margin:0;color:#dbe2ea;font-size:13px}
+.header-grid{display:grid;grid-template-columns:1fr auto;gap:15px;align-items:center}
+.score-ring{width:92px;height:92px;border-radius:50%;display:grid;place-items:center;background:conic-gradient(#60a5fa 0deg,#60a5fa var(--deg),rgba(255,255,255,.16) var(--deg),rgba(255,255,255,.16) 360deg)}
+.score-ring > div{width:70px;height:70px;border-radius:50%;background:#162235;display:grid;place-items:center;text-align:center}
+.score-ring b{font-size:21px;line-height:1}.score-ring span{display:block;font-size:11px;color:#b9c4d3}
+.tabs{display:flex;gap:8px;margin:14px 0;overflow:auto;padding-bottom:2px}
+.tab{white-space:nowrap;border:1px solid var(--line);background:var(--card);padding:10px 13px;border-radius:12px;color:var(--muted)}
+.tab.active{background:var(--primary);color:#fff;border-color:var(--primary)}
+.section{display:none}.section.active{display:block}
+.card{background:var(--card);border:1px solid var(--line);border-radius:18px;padding:15px;box-shadow:var(--shadow);margin-bottom:13px}
+.row{display:flex;gap:10px;align-items:center;justify-content:space-between}
+.row.wrap{flex-wrap:wrap}
+.title{font-size:16px;font-weight:800;margin:0}
+.muted{color:var(--muted);font-size:12px}
+.day-select{display:flex;gap:8px;overflow:auto}
+.day-btn{min-width:54px;padding:10px 7px;border-radius:12px;border:1px solid var(--line);background:#fff}
+.day-btn b{display:block;font-size:14px}.day-btn span{font-size:10px;color:var(--muted)}
+.day-btn.active{background:var(--soft);border-color:#c7d2fe}
+.progress{height:10px;border-radius:999px;background:#edf0f3;overflow:hidden}
+.progress>div{height:100%;background:var(--accent);width:0%;transition:width .2s}
+.task{display:grid;grid-template-columns:52px 1fr auto;gap:11px;align-items:center;padding:12px 0;border-bottom:1px solid var(--line)}
+.task:last-child{border-bottom:0}
+.time{font-weight:800;font-size:13px}.time small{display:block;color:var(--muted);font-weight:500}
+.task-main strong{display:block;font-size:14px}.task-main .meta{font-size:11px;color:var(--muted);margin-top:2px}
+.task-btn{border:0;border-radius:12px;padding:9px 11px;background:#eef2f7;color:#334155;font-weight:800;min-width:82px}
+.task-btn.done{background:#dcfce7;color:#166534}.task-btn:disabled{background:#fee2e2;color:#991b1b;opacity:1;cursor:not-allowed}.task-btn.late{background:#fef3c7;color:#92400e}.task-btn.miss{background:#fee2e2;color:#991b1b}
+.task.done .task-main strong{text-decoration:line-through;text-decoration-thickness:1px;color:#667085}
+.badges{display:flex;gap:5px;flex-wrap:wrap;margin-top:5px}
+.badge{font-size:10px;border-radius:999px;padding:3px 7px;background:#f1f5f9;color:#475569}
+.badge.hsk{background:#eff6ff;color:#1d4ed8}.badge.gym{background:#f3e8ff;color:#7e22ce}.badge.health{background:#ecfdf5;color:#047857}
+.stats{display:grid;grid-template-columns:repeat(3,1fr);gap:9px}
+.stat{background:#f8fafc;border-radius:14px;padding:12px}.stat b{display:block;font-size:19px}.stat span{font-size:11px;color:var(--muted)}
+.btn{border:0;background:var(--primary);color:#fff;padding:10px 13px;border-radius:12px;font-weight:800}
+.btn.secondary{background:#eef2f7;color:#334155}.btn.green{background:var(--green)}
+.btn.red{background:#fee2e2;color:#991b1b}
+.actions{display:flex;gap:8px;flex-wrap:wrap}
+input,select{width:100%;border:1px solid var(--line);border-radius:10px;padding:10px;background:#fff}
+.field{display:grid;gap:6px}.field label{font-size:12px;font-weight:700;color:#475569}
+.form-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.week-grid{display:grid;gap:8px}
+.week-item{background:#f8fafc;border-radius:13px;padding:11px}
+.week-item .bar{height:7px;background:#e5e7eb;border-radius:99px;overflow:hidden;margin-top:7px}.week-item .bar span{display:block;height:100%;background:#2563eb;width:0%}
+.kicker{font-size:11px;letter-spacing:.05em;text-transform:uppercase;color:#64748b;font-weight:800}
+.big{font-size:29px;font-weight:900}
+.notice{padding:10px 12px;border-radius:12px;background:#eff6ff;color:#1e40af;font-size:12px;line-height:1.45}
+.warning{padding:10px 12px;border-radius:12px;background:#fff7ed;color:#9a3412;font-size:12px;line-height:1.45}
+.empty{padding:20px;text-align:center;color:var(--muted)}
+.footer-note{text-align:center;color:var(--muted);font-size:11px;margin:18px 0}
+.modal{position:fixed;inset:0;background:rgba(15,23,42,.5);display:none;align-items:flex-end;justify-content:center;z-index:99}
+.modal.show{display:flex}.sheet{width:100%;max-width:900px;background:#fff;border-radius:22px 22px 0 0;padding:18px;max-height:88vh;overflow:auto}
+.close{border:0;background:#eef2f7;border-radius:10px;padding:8px 10px}
+.checkbox-row{display:flex;align-items:center;gap:8px;padding:9px 0}.checkbox-row input{width:auto}
+.timeline-filter{display:flex;gap:7px;flex-wrap:wrap}.pill{border:1px solid var(--line);background:#fff;padding:7px 10px;border-radius:999px;font-size:11px}.pill.on{background:#111827;color:#fff;border-color:#111827}
+@media(max-width:620px){
+  .app{padding:10px}
+  .header{border-radius:18px;padding:15px}
+  .header-grid{grid-template-columns:1fr auto}
+  .score-ring{width:80px;height:80px}.score-ring>div{width:61px;height:61px}
+  .task{grid-template-columns:48px 1fr;align-items:start}
+  .task-btn{grid-column:2;justify-self:start}
+  .stats{grid-template-columns:repeat(3,1fr)}
+  .form-grid{grid-template-columns:1fr}
+}
+.month-day{min-height:46px;border-radius:10px;border:1px solid var(--line);background:#f8fafc;padding:6px;font-size:10px;text-align:center}
+.month-day b{display:block;font-size:12px}.month-day .mbar{height:5px;border-radius:99px;background:#e5e7eb;overflow:hidden;margin-top:5px}.month-day .mbar span{display:block;height:100%;background:#2563eb}
+.statline{display:grid;grid-template-columns:1fr auto;gap:10px;align-items:center;padding:10px 0;border-bottom:1px solid var(--line)}.statline:last-child{border-bottom:0}
+.history-row{padding:13px 0;border-bottom:1px solid var(--line)}.history-row:last-child{border-bottom:0}
+.history-row .score{font-weight:900;font-size:18px}
+</style>
+</head>
+<body>
+<div id="startupStatus" style="position:fixed;left:10px;right:10px;top:10px;z-index:9999;padding:9px 12px;border-radius:12px;background:#eff6ff;color:#1e40af;font:12px system-ui;display:block">
+  Focus Tracker ачаалж байна...
+</div>
+<noscript><div style="margin:12px;padding:16px;border-radius:14px;background:#fff7ed;color:#9a3412;font-family:system-ui">
+  Энэ browser JavaScript ажиллуулахгүй байна. Focus Tracker-ийг Chrome/Safari зэрэг JavaScript дэмждэг browser-оор нээнэ үү.
+</div></noscript>
+<div class="app">
+  <header class="header">
+    <div class="header-grid">
+      <div>
+        <div class="kicker" style="color:#a9b8ca">16 долоо хоногийн систем • V6 • НЭГ URL • ТҮҮХ ХАДГАЛАГДАНА</div>
+        <h1>06:00 Focus • HSK5 • Gym</h1>
+        <p id="todayText">Өнөөдөр</p>
+        <div style="margin-top:12px">
+          <div style="font-size:11px;color:#c7d1de;margin-bottom:4px">Өдрийн явц</div>
+          <div class="progress" style="background:rgba(255,255,255,.16)"><div id="headerProgress" style="background:#60a5fa"></div></div>
+        </div>
+      </div>
+      <div class="score-ring" id="ring" style="--deg:0deg">
+        <div><b id="scoreText">0</b><span>/ 100</span></div>
+      </div>
+    </div>
+  </header>
+
+  <nav class="tabs">
+    <button class="tab active" data-tab="today">Өнөөдөр</button>
+    <button class="tab" data-tab="week">7 хоног</button>
+    <button class="tab" data-tab="hsk">HSK5</button><button class="tab" data-tab="history">📚 Түүх</button><button class="tab" data-tab="stats">📊 Статистик</button>
+    <button class="tab" data-tab="settings">Тохиргоо</button>
+  </nav>
+
+  <section class="section active" id="today">
+    <div class="card">
+      <div class="row wrap">
+        <div>
+          <div class="kicker">Өдрийн сонголт</div>
+          <input id="historyDate" type="date">
+        </div>
+        <div class="actions">
+          <button class="btn secondary" id="prevDateBtn">← Өмнөх</button>
+          <button class="btn secondary" id="todayDateBtn">Өнөөдөр</button>
+          <button class="btn secondary" id="nextDateBtn">Дараах →</button>
+        </div>
+      </div>
+      <div class="day-select" id="daySelect" style="margin-top:10px"></div>
+    </div>
+    <div class="card">
+      <div class="row wrap">
+        <div>
+          <div class="kicker">Утасны цаг</div>
+          <div id="liveClock" style="font-size:30px;font-weight:900;letter-spacing:.02em">--:--:--</div>
+          <div id="clockDate" class="muted">--</div>
+        </div>
+        <div style="text-align:right">
+          <div class="kicker">Дараагийн зорилт</div>
+          <b id="nextTask">--</b>
+          <div id="countdown" class="muted">--</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="row wrap">
+        <div>
+          <h2 class="title">🔔 Мэдэгдэл</h2>
+          <div class="muted">Апп нээлттэй үед цагийн дагуу сануулна. Дэлгэц түгжээтэй/апп хаалттай үед тогтвортой push авахын тулд доорх Push server-ийг холбоно.</div>
+        </div>
+        <div class="actions">
+          <button class="btn" id="notifyBtn">Мэдэгдэл зөвшөөрөх</button>
+          <button class="btn secondary" id="testNotifyBtn">Тест</button>
+          <button class="btn secondary" id="calendarBtn">📅 Calendar файл</button>
+        </div>
+      </div>
+      <div class="form-grid" style="margin-top:10px">
+        <div class="field"><label>Сануулгыг хэдэн минутын өмнө?</label><select id="reminderMinutes">
+          <option value="0">Яг цагтаа</option><option value="5">5 минутын өмнө</option>
+          <option value="10" selected>10 минутын өмнө</option><option value="15">15 минутын өмнө</option>
+          <option value="30">30 минутын өмнө</option></select></div>
+        <div class="field"><label>Автомат сануулга</label><select id="notificationMode">
+          <option value="on" selected>Асаалттай</option><option value="off">Унтраалттай</option></select></div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="row">
+        <div>
+          <div class="kicker">Өнөөдрийн зорилт</div>
+          <div class="big"><span id="doneCount">0</span> / <span id="taskCount">0</span></div>
+        </div>
+        <div style="text-align:right">
+          <div class="muted">Оноо</div>
+          <b id="todayScore">0 / 100</b><div class="muted" id="earnedPoints">0 оноо авсан</div>
+        </div>
+      </div>
+      <div class="progress" style="margin-top:10px"><div id="dayProgress"></div></div>
+    </div>
+
+    <div class="card">
+      <div class="row" style="margin-bottom:4px">
+        <h2 class="title">Цагийн хуваарь</h2>
+        <button class="btn secondary" id="addTaskBtn">+ Өөрийн зорилт</button>
+      </div>
+      <div class="muted" style="margin-bottom:6px">Товчийг дарахад гүйцэтгэлийн цаг автоматаар бүртгэгдэнэ. Хугацаандаа хийвэл бүтэн оноо.</div>
+      <div id="taskList"></div>
+    </div>
+
+    <div class="card">
+      <div class="row"><h2 class="title">⏱ Бүртгэлийн дүрэм</h2><span class="badge" style="background:#fff7ed;color:#9a3412">10 минут</span></div>
+      <div class="warning" style="margin-top:10px">
+        Зорилтын эхлэх цагаас хойш <b>10 минут хүрмэгц бүртгэл хаагдана</b>. Жишээ нь 08:00-ийн зорилтыг 08:09-д бүртгэж болно, харин 08:10-д “Дууссан” дарах боломжгүй.
+        Өмнөх өдрүүдийн хадгалагдсан бүртгэл устахгүй.
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="row"><h2 class="title">Өнөөдрийн дүрэм</h2><span class="badge health">Эрүүл мэнд</span></div>
+      <div class="notice" style="margin-top:10px">
+        Газтай чихэртэй ундаа: 0–1 удаа • Усаа тогтмол уух • Сахал авсны дараа чийгшүүлэгч • Орой 21:30-аас social media-г зогсоох.
+      </div>
+    </div>
+  </section>
+
+  <section class="section" id="week">
+    <div class="card">
+      <div class="row wrap">
+        <div>
+          <div class="kicker">7 хоногийн дүн</div>
+          <h2 class="title" style="margin-top:4px">Тогтвортой байдал</h2>
+        </div>
+        <div class="big" id="weekAvg">0</div>
+      </div>
+      <div class="stats" style="margin-top:12px">
+        <div class="stat"><b id="weekDays">0/7</b><span>60:00 босолт</span></div>
+        <div class="stat"><b id="weekGym">0/4</b><span>Gym</span></div>
+        <div class="stat"><b id="weekHSK">0</b><span>HSK минут</span></div>
+      </div>
+    </div>
+    <div class="card">
+      <div class="row" style="margin-bottom:8px">
+        <h2 class="title">Өдөр бүр</h2>
+        <span class="muted">оноогоор</span>
+      </div>
+      <div id="weekList" class="week-grid"></div>
+    </div>
+    <div class="card">
+      <div class="kicker">Хичээлийн долоо хоног</div>
+      <div class="warning" style="margin-top:9px">Энэ апп таны хичээлийн хуваарийг суурь болгон өдөртөө хийх зүйлсийг харуулна. Давхацсан/ээлжилдэг хичээлүүдийг “Тохиргоо”-оос өөрчлөх боломжтой.</div>
+    </div>
+  </section>
+
+  <section class="section" id="hsk">
+    <div class="card">
+      <div class="row">
+        <div><div class="kicker">4 сарын зорилго</div><h2 class="title" style="margin-top:4px">HSK4 → HSK5</h2></div>
+        <div class="big" id="hskDays">120</div>
+      </div>
+      <div class="muted" id="hskTargetText" style="margin-top:7px">Зорилтот өдөр хүртэл</div>
+      <div class="progress" style="margin-top:10px"><div id="hskProgress"></div></div>
+    </div>
+    <div class="card">
+      <div class="row"><h2 class="title">Өнөөдрийн HSK</h2><span class="badge hsk">HSK5</span></div>
+      <div class="form-grid" style="margin-top:10px">
+        <div class="field"><label>Үг / шинэ хэллэг</label><input id="hskWords" type="number" min="0" step="1" placeholder="жишээ: 25"></div>
+        <div class="field"><label>Listening (мин)</label><input id="hskListen" type="number" min="0" step="5" placeholder="жишээ: 30"></div>
+        <div class="field"><label>Reading (мин)</label><input id="hskRead" type="number" min="0" step="5" placeholder="жишээ: 30"></div>
+        <div class="field"><label>Writing / Speaking (мин)</label><input id="hskOutput" type="number" min="0" step="5" placeholder="жишээ: 20"></div>
+      </div>
+      <div class="actions" style="margin-top:12px"><button class="btn green" id="saveHsk">Өнөөдрийн HSK-г хадгалах</button></div>
+    </div>
+    <div class="card">
+      <h2 class="title">4 сарын үе шат</h2>
+      <div class="week-grid" style="margin-top:10px">
+        <div class="week-item"><b>1-р сар</b><div class="muted">HSK4 суурь баталгаажуулах • өдөрт 20–25 үг</div></div>
+        <div class="week-item"><b>2-р сар</b><div class="muted">HSK5 шинэ үг + унших/сонсох</div></div>
+        <div class="week-item"><b>3-р сар</b><div class="muted">Listening/Reading/Writing/Speaking + цагтай тест</div></div>
+        <div class="week-item"><b>4-р сар</b><div class="muted">Mock test • алдааны дэвтэр • шалгалтын горим</div></div>
+      </div>
+    </div>
+  </section>
+
+
+  <section class="section" id="history">
+    <div class="card">
+      <div class="row wrap">
+        <div>
+          <div class="kicker">Өмнөх өдрүүд</div>
+          <h2 class="title" style="margin-top:4px">Бүртгэлийн түүх</h2><div class="muted">Бүртгэлүүдийг огноогоор тусад нь хадгална.</div>
+        </div>
+        <div class="actions">
+          <button class="btn secondary" id="history7Btn">7 хоног</button>
+          <button class="btn secondary" id="history30Btn">30 хоног</button>
+          <button class="btn secondary" id="historyAllBtn">Бүгд</button>
+        </div>
+      </div>
+      <div class="muted" style="margin-top:8px">Өмнөх өдрүүдийн оноо, хийсэн зорилт, HSK минут, Gym бүртгэл энд хадгалагдана.</div>
+    </div>
+    <div class="card">
+      <div id="historyList"></div>
+    </div>
+  </section>
+
+  <section class="section" id="stats">
+    <div class="card">
+      <div class="row wrap">
+        <div>
+          <div class="kicker">Урт хугацааны хяналт</div>
+          <h2 class="title" style="margin-top:4px">Өдөр / 7 хоног / сар</h2>
+        </div>
+        <div class="big" id="monthAvg">0</div>
+      </div>
+      <div class="muted" id="monthLabel">Энэ сарын дундаж</div>
+    </div>
+    <div class="stats" style="margin-bottom:13px">
+      <div class="stat"><b id="monthPerfect">0</b><span>90+ оноотой өдөр</span></div>
+      <div class="stat"><b id="monthWake">0</b><span>06:00 зорилго</span></div>
+      <div class="stat"><b id="monthGym">0</b><span>Gym session</span></div>
+    </div>
+    <div class="card">
+      <div class="row"><h2 class="title">Сарын календарь</h2><span class="muted">өдөр бүр</span></div>
+      <div id="monthGrid" style="display:grid;grid-template-columns:repeat(7,1fr);gap:6px;margin-top:12px"></div>
+    </div>
+    <div class="card">
+      <div class="row"><h2 class="title">Сүүлийн 30 хоног</h2><span class="muted">өдөр бүрийн дундаж</span></div>
+      <div id="last30"></div>
+    </div>
+  </section>
+
+  <section class="section" id="settings">
+    <div class="card">
+      <div class="row"><h2 class="title">Таны тогтмол зорилго</h2><span class="muted">автоматаар хадгална</span></div>
+      <div class="form-grid" style="margin-top:11px">
+        <div class="field"><label>Өглөө босох</label><input id="wakeTime" type="time"></div>
+        <div class="field"><label>Унтахын өмнө орондоо орох</label><input id="bedTime" type="time"></div>
+        <div class="field"><label>Өглөөний HSK (мин)</label><input id="morningHsk" type="number" min="0"></div>
+        <div class="field"><label>Оройн HSK (мин)</label><input id="eveningHsk" type="number" min="0"></div>
+      </div>
+      <div class="field" style="margin-top:11px">
+        <label>Gym хийх 4 өдөр</label>
+        <div id="gymDays"></div>
+      </div>
+      <div class="actions" style="margin-top:12px"><button class="btn green" id="saveSettings">Тохиргоог хадгалах</button></div>
+    </div>
+
+    <div class="card">
+      <div class="row wrap">
+        <div>
+          <div class="kicker">НЭГ URL PUSH</div>
+          <h2 class="title" style="margin-top:4px">🔔 Түгжээтэй үед notification</h2>
+          <div class="muted">Энэ web app болон Push Server нэг URL дээр ажиллана. URL гараар оруулах шаардлагагүй.</div>
+        </div>
+        <span class="badge" id="pushStatus">Тохируулаагүй</span>
+      </div>
+      <div class="notice" style="margin-top:10px">
+        <b>1.</b> App-аа HTTPS хаягаар нээнэ → <b>2.</b> “Push асаах” → <b>3.</b> Утас “Allow” → <b>4.</b> “Хуваарь синк”.
+      </div>
+      <div class="actions" style="margin-top:10px">
+        <button class="btn green" id="enablePushBtn">🔔 Push асаах</button>
+        <button class="btn secondary" id="syncPushBtn">↻ Хуваарь синк</button>
+        <button class="btn secondary" id="testPushBtn">🧪 Test</button>
+        <button class="btn red" id="disablePushBtn">Цуцлах</button>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2 class="title">Өгөгдөл</h2>
+      <div class="actions" style="margin-top:10px">
+        <button class="btn secondary" id="exportBtn">JSON export</button>
+        <button class="btn secondary" id="importBtn">JSON import</button>
+        <input id="importFile" type="file" accept=".json,application/json" style="display:none">
+        <button class="btn red" id="resetBtn">Бүх өгөгдлийг арилгах</button>
+      </div>
+      <div class="muted" style="margin-top:10px">Өгөгдөл энэ төхөөрөмжийн browser-ийн localStorage-д автоматаар хадгалагдана. JSON export хийж backup авч болно.</div>
+      <div class="notice" style="margin-top:10px">Утасны яг цагийг тусдаа тохируулах шаардлагагүй. Апп нь таны төхөөрөмжийн системийн цагийг автоматаар ашиглана.</div>
+    </div>
+
+    <div class="card">
+      <h2 class="title">Хуваарь</h2>
+      <div id="scheduleEditor"></div>
+      <div class="muted" style="margin-top:9px">Зураг дээрх таны хичээлийн суурь хуваарь оруулсан. Ээлжилдэг хичээлийн нэрийг хэрэгтэй үед засаж болно.</div>
+    </div>
+  </section>
+
+  <div class="footer-note">Offline ажиллана • Data зөвхөн энэ browser дээр хадгалагдана</div>
+</div>
+
+<div class="modal" id="modal">
+  <div class="sheet">
+    <div class="row">
+      <h2 class="title">Өөрийн зорилт нэмэх</h2>
+      <button class="close" id="closeModal">Хаах</button>
+    </div>
+    <div class="form-grid" style="margin-top:12px">
+      <div class="field"><label>Зорилтын нэр</label><input id="customName" placeholder="жишээ: 30 минут унших"></div>
+      <div class="field"><label>Цаг</label><input id="customTime" type="time" value="19:00"></div>
+      <div class="field"><label>Оноо</label><input id="customPoints" type="number" min="1" max="50" value="5"></div>
+      <div class="field"><label>Ангилал</label><select id="customCat"><option>Хичээл</option><option>HSK</option><option>Gym</option><option>Эрүүл мэнд</option><option>Амьдрал</option></select></div>
+    </div>
+    <div class="actions" style="margin-top:12px"><button class="btn green" id="saveCustom">Нэмэх</button></div>
+  </div>
+</div>
+
+<script>
+window.addEventListener("error", function(e){
+  const el=document.getElementById("startupStatus");
+  if(el){
+    el.style.display="block";
+    el.style.background="#fee2e2";
+    el.style.color="#991b1b";
+    el.textContent="Web app-ийн алдаа: "+(e.error?.message || e.message || "тодорхойгүй алдаа");
+  }
+});
+const DAYS = ["Даваа","Мягмар","Лхагва","Пүрэв","Баасан","Бямба","Ням"];
+const shortDays = ["Да","Мя","Лх","Пү","Ба","Бя","Ня"];
+const defaultSettings = {
+  wakeTime:"06:00", bedTime:"22:00", morningHsk:20, eveningHsk:45,
+  gymDays:[0,1,3,5]
+};
+const schedule = {
+  0:[
+    {time:"06:00",name:"06:00-д босох + 1 аяга ус",points:10,cat:"Эрүүл мэнд",type:"wake"},
+    {time:"06:10",name:"Өглөөний алхалт / нарны гэрэл",points:5,cat:"Эрүүл мэнд"},
+    {time:"07:35",name:"HSK үг давтах",points:5,cat:"HSK"},
+    {time:"08:00",name:"Хятад хэл",points:15,cat:"Хичээл",end:"10:00"},
+    {time:"10:10",name:"测绘管理与法律法规 / 微机原理",points:10,cat:"Хичээл",end:"12:00"},
+    {time:"13:00",name:"Өглөөгийн хичээлийн review",points:8,cat:"Хичээл",end:"13:40"},
+    {time:"14:00",name:"微机原理与接口技术",points:10,cat:"Хичээл",end:"15:50"},
+    {time:"17:30",name:"GYM — Push",points:15,cat:"Gym",end:"19:30"},
+    {time:"20:00",name:"HSK5 — үг + listening",points:10,cat:"HSK",end:"21:00"},
+    {time:"22:00",name:"Орондоо орох",points:12,cat:"Эрүүл мэнд",type:"bed"}
+  ],
+  1:[
+    {time:"06:00",name:"06:00-д босох + 1 аяга ус",points:10,cat:"Эрүүл мэнд",type:"wake"},
+    {time:"06:10",name:"Өглөөний алхалт / нарны гэрэл",points:5,cat:"Эрүүл мэнд"},
+    {time:"07:40",name:"HSK Reading",points:8,cat:"HSK",end:"08:20"},
+    {time:"08:30",name:"Хичээлийн preview",points:5,cat:"Хичээл",end:"09:30"},
+    {time:"10:10",name:"水下地形测量学",points:15,cat:"Хичээл",end:"12:00"},
+    {time:"13:00",name:"Хичээлийн тэмдэглэл + review",points:8,cat:"Хичээл",end:"14:00"},
+    {time:"14:00",name:"HSK Listening",points:8,cat:"HSK",end:"15:00"},
+    {time:"15:00",name:"Даалгавар / төвлөрсөн ажил",points:7,cat:"Хичээл",end:"16:00"},
+    {time:"17:30",name:"GYM — Pull",points:15,cat:"Gym",end:"19:30"},
+    {time:"20:00",name:"HSK Speaking + үг",points:10,cat:"HSK",end:"20:40"},
+    {time:"22:00",name:"Орондоо орох",points:12,cat:"Эрүүл мэнд",type:"bed"}
+  ],
+  2:[
+    {time:"06:00",name:"06:00-д босох + 1 аяга ус",points:10,cat:"Эрүүл мэнд",type:"wake"},
+    {time:"06:10",name:"Өглөөний алхалт / нарны гэрэл",points:5,cat:"Эрүүл мэнд"},
+    {time:"07:35",name:"HSK үг давталт",points:5,cat:"HSK"},
+    {time:"08:00",name:"Хятад хэл",points:15,cat:"Хичээл",end:"10:00"},
+    {time:"10:10",name:"测绘管理与法律法规 / 三维建模技术",points:10,cat:"Хичээл",end:"12:00"},
+    {time:"14:00",name:"微机原理与接口技术",points:10,cat:"Хичээл",end:"15:50"},
+    {time:"16:10",name:"测绘专业英语",points:10,cat:"Хичээл",end:"18:00"},
+    {time:"19:30",name:"HSK Writing — 100–150 ханз",points:10,cat:"HSK",end:"20:30"},
+    {time:"20:30",name:"Маргаашийн хичээлийн бэлтгэл",points:5,cat:"Хичээл",end:"21:00"},
+    {time:"22:00",name:"Орондоо орох",points:12,cat:"Эрүүл мэнд",type:"bed"}
+  ],
+  3:[
+    {time:"06:00",name:"06:00-д босох + 1 аяга ус",points:10,cat:"Эрүүл мэнд",type:"wake"},
+    {time:"06:10",name:"Өглөөний алхалт / нарны гэрэл",points:5,cat:"Эрүүл мэнд"},
+    {time:"07:40",name:"HSK Reading",points:8,cat:"HSK",end:"08:20"},
+    {time:"08:30",name:"水下地形测量学-ийн preview",points:5,cat:"Хичээл",end:"09:30"},
+    {time:"10:10",name:"Хичээлийн review / бие даалт",points:8,cat:"Хичээл",end:"11:00"},
+    {time:"14:00",name:"水下地形测量学",points:15,cat:"Хичээл",end:"15:50"},
+    {time:"15:50",name:"测绘专业英语",points:10,cat:"Хичээл",end:"17:00"},
+    {time:"17:30",name:"GYM — Legs + Core",points:15,cat:"Gym",end:"19:30"},
+    {time:"20:00",name:"HSK Listening",points:10,cat:"HSK",end:"20:45"},
+    {time:"22:00",name:"Орондоо орох",points:12,cat:"Эрүүл мэнд",type:"bed"}
+  ],
+  4:[
+    {time:"06:00",name:"06:00-д босох + 1 аяга ус",points:10,cat:"Эрүүл мэнд",type:"wake"},
+    {time:"06:10",name:"Өглөөний алхалт / нарны гэрэл",points:5,cat:"Эрүүл мэнд"},
+    {time:"07:40",name:"HSK үгийн давталт",points:8,cat:"HSK",end:"08:30"},
+    {time:"09:00",name:"Долоо хоногийн хичээлийн summary",points:8,cat:"Хичээл",end:"10:00"},
+    {time:"10:10",name:"三维建模技术 / хичээлийн цаг",points:10,cat:"Хичээл",end:"12:00"},
+    {time:"14:00",name:"测绘专业英语 / HSK Reading test",points:12,cat:"Хичээл",end:"15:50"},
+    {time:"16:00",name:"Алдааны дэвтэр + нөхөх ажил",points:8,cat:"Хичээл",end:"17:00"},
+    {time:"17:30",name:"Хөнгөн алхалт / сэргээх өдөр",points:5,cat:"Эрүүл мэнд",end:"18:15"},
+    {time:"19:30",name:"HSK Speaking",points:10,cat:"HSK",end:"20:30"},
+    {time:"22:00",name:"Орондоо орох",points:12,cat:"Эрүүл мэнд",type:"bed"}
+  ],
+  5:[
+    {time:"06:00",name:"06:00-д босох + 1 аяга ус",points:10,cat:"Эрүүл мэнд",type:"wake"},
+    {time:"06:10",name:"Өглөөний алхалт / нарны гэрэл",points:5,cat:"Эрүүл мэнд"},
+    {time:"08:00",name:"HSK урт блок — үг + унших + сонсох",points:12,cat:"HSK",end:"09:30"},
+    {time:"10:10",name:"三维建模技术",points:12,cat:"Хичээл",end:"12:00"},
+    {time:"14:00",name:"GYM — Upper / Full body",points:15,cat:"Gym",end:"16:00"},
+    {time:"17:00",name:"Хятад хэлээр бүтэн видео / podcast",points:8,cat:"HSK",end:"18:00"},
+    {time:"20:00",name:"HSK долоо хоногийн үг",points:8,cat:"HSK",end:"20:30"},
+    {time:"22:00",name:"Орондоо орох",points:12,cat:"Эрүүл мэнд",type:"bed"}
+  ],
+  6:[
+    {time:"06:00",name:"06:00-д босох + 1 аяга ус",points:10,cat:"Эрүүл мэнд",type:"wake"},
+    {time:"06:10",name:"Урт алхалт / сэргээх өдөр",points:8,cat:"Эрүүл мэнд",end:"07:30"},
+    {time:"08:30",name:"HSK mock test",points:15,cat:"HSK",end:"10:00"},
+    {time:"10:00",name:"Өрөө, хувцас, хоолны бэлтгэл",points:5,cat:"Амьдрал",end:"12:00"},
+    {time:"14:00",name:"Ирэх 7 хоногийн хичээлийн preview",points:10,cat:"Хичээл",end:"15:00"},
+    {time:"15:00",name:"HSK алдааны дэвтэр",points:8,cat:"HSK",end:"16:00"},
+    {time:"17:00",name:"Чөлөөт цаг / сэргээх",points:5,cat:"Эрүүл мэнд",end:"18:00"},
+    {time:"21:30",name:"Social media зогсоох",points:5,cat:"Амьдрал",end:"22:00"},
+    {time:"22:00",name:"Орондоо орох",points:12,cat:"Эрүүл мэнд",type:"bed"}
+  ]
+};
+const KEY="focus_tracker_v1";
+let db = loadDb() || {settings:defaultSettings, logs:{}, hsk:{}};
+db.settings = {...defaultSettings,...db.settings};
+let selectedDate = new Date();
+let selectedDay = selectedDate.getDay()===0?6:selectedDate.getDay()-1;
+
+function iso(d){return new Date(d.getFullYear(),d.getMonth(),d.getDate()).toISOString().slice(0,10)}
+function save(){
+  try{
+    localStorage.setItem(KEY,JSON.stringify(db));
+    localStorage.setItem("focus_last_saved_v1",new Date().toISOString());
+  }catch(e){
+    window.__focusMemoryBackup=JSON.stringify(db);
+  }
+}
+function loadDb(){
+  try{
+    const raw=localStorage.getItem(KEY);
+    if(raw) return JSON.parse(raw);
+  }catch(e){}
+  try{
+    if(window.__focusMemoryBackup) return JSON.parse(window.__focusMemoryBackup);
+  }catch(e){}
+  return null;
+}
+function getDayByDate(d){
+  const day=d.getDay();
+  return day===0 ? 6 : day-1;
+}
+function isToday(d){
+  const n=new Date();
+  return iso(d)===iso(n);
+}
+function scoreDate(d){
+  const dd=new Date(d.getFullYear(),d.getMonth(),d.getDate());
+  return scoreDay(iso(dd),getDayByDate(dd)).normalized;
+}
+
+function fmtDate(d){
+  return d.toLocaleDateString("mn-MN",{weekday:"long",year:"numeric",month:"long",day:"numeric"});
+}
+function getTasks(dayIdx,dateKey){
+  const base = (schedule[dayIdx]||[]).map((x,i)=>({...x,id:`${dayIdx}-${i}`}));
+  const customs=(db.logs[dateKey]?.customTasks||[]).map(x=>({...x}));
+  return [...base,...customs].sort((a,b)=>a.time.localeCompare(b.time));
+}
+function getLog(dateKey){return db.logs[dateKey]||(db.logs[dateKey]={done:{},customTasks:[],water:0,soda:0})}
+function scoreFor(task, entry){
+  if(!entry) return 0;
+  if(entry.rejected) return 0;
+  if(entry.pointsOverride!=null) return entry.pointsOverride;
+
+  // A task may only be completed within 10 minutes after its scheduled start.
+  // For the current day, the UI also disables the button after the 10-minute cutoff.
+  const target=minutes(task.time);
+  const actual=minutes(entry.at);
+  const diff=actual-target;
+
+  if(diff < -60) return 0; // impossible / previous day wrap protection
+  if(diff >= 10) return 0;  // 10 minutes late => no registration/score
+
+  // Early completion is allowed up to 30 minutes before the scheduled time.
+  if(diff >= -30 && diff < 0) return task.points;
+
+  // On-time or 1–9 minutes late = full points.
+  if(diff >= 0 && diff < 10) return task.points;
+
+  return 0;
+}
+function minutes(t){const [h,m]=t.split(":").map(Number);return h*60+m}
+function scoreDay(dateKey,dayIdx){
+  const tasks=getTasks(dayIdx,dateKey), log=getLog(dateKey);
+  let total=tasks.reduce((s,t)=>s+t.points,0), got=tasks.reduce((s,t)=>s+scoreFor(t,log.done[t.id]),0);
+  // Normalize to 100; add health rules as optional micro-bonus/correction
+  const normalized=total?Math.round((got/total)*100):0;
+  return {total,got,normalized};
+}
+function renderDays(){
+  const wrap=document.getElementById("daySelect");wrap.innerHTML="";
+  const base=new Date(selectedDate);
+  const idx=getDayByDate(base);
+  base.setDate(base.getDate()-idx);
+  for(let i=0;i<7;i++){
+    const d=new Date(base);d.setDate(base.getDate()+i);
+    const key=iso(d), sc=scoreDay(key,i).normalized;
+    const btn=document.createElement("button");btn.className="day-btn"+(i===selectedDay?" active":"");
+    btn.innerHTML=`<b>${shortDays[i]}</b><span>${sc} оноо</span>`;
+    btn.onclick=()=>{selectDate(d);};
+    wrap.appendChild(btn);
+  }
+  const inp=document.getElementById("historyDate"); if(inp) inp.value=iso(selectedDate);
+}
+function renderToday(){
+  const d=new Date(selectedDate), dateKey=iso(d), dayIdx=getDayByDate(d);
+  const log=getLog(dateKey), tasks=getTasks(dayIdx,dateKey), sc=scoreDay(dateKey,dayIdx);
+  document.getElementById("todayText").textContent=fmtDate(d);
+  document.getElementById("doneCount").textContent=tasks.filter(t=>!!log.done[t.id]).length;
+  document.getElementById("taskCount").textContent=tasks.length;
+  document.getElementById("todayScore").textContent=`${sc.normalized} / 100`; document.getElementById("earnedPoints").textContent=`${sc.got} оноо авсан`;
+  document.getElementById("scoreText").textContent=sc.normalized;
+  document.getElementById("ring").style.setProperty("--deg",`${sc.normalized*3.6}deg`);
+  document.getElementById("dayProgress").style.width=(tasks.length?Math.round(tasks.filter(t=>!!log.done[t.id]).length/tasks.length*100):0)+"%";
+  document.getElementById("headerProgress").style.width=(tasks.length?Math.round(tasks.filter(t=>!!log.done[t.id]).length/tasks.length*100):0)+"%";
+
+  const list=document.getElementById("taskList"); list.innerHTML="";
+  const live=isToday(d);
+  const nowM=minutesNow();
+
+  tasks.forEach(task=>{
+    const entry=log.done[task.id];
+    const target=minutes(task.time);
+    const cutoff=target+10;
+    const tooLate=live && nowM>=cutoff && !entry;
+    const gained=scoreFor(task,entry);
+    const row=document.createElement("div");row.className="task"+(entry?" done":"");
+    const badgeClass=task.cat==="HSK"?"hsk":task.cat==="Gym"?"gym":task.cat==="Эрүүл мэнд"?"health":"";
+
+    let buttonClass=entry?"done":"";
+    let btnText=entry?`✓ ${gained}`:"Дууссан";
+    let extra="";
+    if(!entry && live){
+      if(nowM < target){
+        const left=Math.max(0,Math.ceil(target-nowM));
+        extra=`<span class="badge">⏳ ${left} мин үлдсэн</span>`;
+      }else if(nowM < cutoff){
+        const left=Math.max(0,Math.ceil(cutoff-nowM));
+        extra=`<span class="badge" style="background:#fff7ed;color:#9a3412">⚠ ${left} мин дотор</span>`;
+      }else{
+        btnText="Хугацаа дууссан"; buttonClass="miss"; extra=`<span class="badge" style="background:#fee2e2;color:#991b1b">+10 мин болсон</span>`;
+      }
+    }
+    row.innerHTML=`<div class="time">${task.time}<small>${task.end?("→ "+task.end):""}</small></div>
+      <div class="task-main"><strong>${escapeHtml(task.name)}</strong><div class="meta">${task.cat} • ${task.points} оноо</div>
+      <div class="badges"><span class="badge ${badgeClass}">${task.cat}</span>${entry?`<span class="badge">${entry.at}-д бүртгэв</span>`:""}${extra}</div></div>
+      <button class="task-btn ${buttonClass}" ${tooLate?"disabled":""}>${btnText}</button>`;
+
+    const button=row.querySelector(".task-btn");
+    if(tooLate){
+      button.title="Тухайн ажлын эхлэх цагаас 10 минут өнгөрсөн тул бүртгэл хаагдсан.";
+    }else{
+      button.onclick=()=>{
+        if(entry){
+          delete log.done[task.id];
+        }else{
+          const now=new Date();
+          const actual=minutes(now.toTimeString().slice(0,5));
+          if(isToday(d) && actual >= target+10){
+            renderAll();
+            alert(`"${task.name}"-ийг ${task.time}-аас 10 минутын дотор бүртгэх ёстой. Одоо хугацаа дууссан байна.`);
+            return;
+          }
+          log.done[task.id]={
+            at:now.toTimeString().slice(0,5),
+            ts:now.toISOString(),
+            scheduled:task.time
+          };
+        }
+        save();renderAll();
+      };
+    }
+    list.appendChild(row);
+  });
+}
+function renderWeek(){
+  const now=new Date(), idx=(now.getDay()===0?6:now.getDay()-1), mon=new Date(now);
+  mon.setDate(now.getDate()-idx);
+  let sum=0,wake=0,gym=0,hskMin=0;
+  const wrap=document.getElementById("weekList");wrap.innerHTML="";
+  for(let i=0;i<7;i++){
+    const d=new Date(mon);d.setDate(mon.getDate()+i);
+    const key=iso(d),sc=scoreDay(key,i).normalized;
+    sum+=sc;
+    const log=getLog(key);
+    if((schedule[i]||[]).some(t=>t.type==="wake" && log.done[t.id])) wake++;
+    if((log.customTasks||[]).some(t=>t.cat==="Gym" && log.done[t.id])) gym++;
+    const h=db.hsk[key]||{}; hskMin+=(+h.listen||0)+(+h.read||0)+(+h.output||0);
+    const item=document.createElement("div");item.className="week-item";
+    item.innerHTML=`<div class="row"><b>${DAYS[i]}</b><span>${sc}/100</span></div><div class="bar"><span style="width:${sc}%"></span></div>`;
+    wrap.appendChild(item);
+  }
+  document.getElementById("weekAvg").textContent=Math.round(sum/7);
+  document.getElementById("weekDays").textContent=`${wake}/7`;
+  document.getElementById("weekGym").textContent=`${gym}/4`;
+  document.getElementById("weekHSK").textContent=hskMin;
+}
+function renderHsk(){
+  const now=new Date(), start=new Date(now.getFullYear(),now.getMonth(),now.getDate());
+  const storedStart=db.settings.hskStart?new Date(db.settings.hskStart):start;
+  const target=new Date(storedStart);target.setDate(target.getDate()+120);
+  let daysLeft=Math.max(0,Math.ceil((target-start)/86400000));
+  const elapsed=Math.min(120,Math.max(0,120-daysLeft));
+  document.getElementById("hskDays").textContent=daysLeft;
+  document.getElementById("hskTargetText").textContent=`${target.toLocaleDateString("mn-MN")} хүртэл`;
+  document.getElementById("hskProgress").style.width=(elapsed/120*100)+"%";
+  const key=iso(selectedDate),h=db.hsk[key]||{};
+  document.getElementById("hskWords").value=h.words??"";
+  document.getElementById("hskListen").value=h.listen??"";
+  document.getElementById("hskRead").value=h.read??"";
+  document.getElementById("hskOutput").value=h.output??"";
+}
+function renderSettings(){
+  const pr=document.getElementById("pushReminderMinutes"); if(pr) pr.value=String(db.settings.reminderMinutes??10);
+  document.getElementById("wakeTime").value=db.settings.wakeTime;
+  document.getElementById("bedTime").value=db.settings.bedTime;
+  document.getElementById("morningHsk").value=db.settings.morningHsk;
+  document.getElementById("eveningHsk").value=db.settings.eveningHsk;
+  const gd=document.getElementById("gymDays");gd.innerHTML="";
+  DAYS.forEach((n,i)=>{
+    const div=document.createElement("label");div.className="checkbox-row";
+    div.innerHTML=`<input type="checkbox" data-gym="${i}" ${(db.settings.gymDays||[]).includes(i)?"checked":""}> ${n}`;
+    gd.appendChild(div);
+  });
+  const ed=document.getElementById("scheduleEditor");ed.innerHTML="";
+  DAYS.forEach((d,i)=>{
+    const card=document.createElement("div");card.className="week-item";
+    card.innerHTML=`<div class="row"><b>${d}</b><span class="muted">${(schedule[i]||[]).length} зорилт</span></div>
+      <div class="muted" style="margin-top:6px">${(schedule[i]||[]).map(x=>`${x.time} ${x.name}`).join(" • ")}</div>`;
+    ed.appendChild(card);
+  });
+}
+function renderAll(){renderDays();renderToday();renderWeek();renderHsk();renderHistory();renderStats();renderSettings(); updatePushStatus?.();}
+function escapeHtml(s){return s.replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;","'":"&#039;"}[c]))}
+
+// tabs
+document.querySelectorAll(".tab").forEach(btn=>btn.onclick=()=>{
+  document.querySelectorAll(".tab").forEach(b=>b.classList.remove("active"));
+  document.querySelectorAll(".section").forEach(s=>s.classList.remove("active"));
+  btn.classList.add("active");document.getElementById(btn.dataset.tab).classList.add("active");
+});
+
+// custom task modal
+const modal=document.getElementById("modal");
+document.getElementById("addTaskBtn").onclick=()=>modal.classList.add("show");
+document.getElementById("closeModal").onclick=()=>modal.classList.remove("show");
+document.getElementById("saveCustom").onclick=()=>{
+  const name=document.getElementById("customName").value.trim();
+  if(!name)return alert("Зорилтын нэр оруулна уу.");
+  const d=new Date(selectedDate); const key=iso(d), log=getLog(key);
+  const task={id:"custom-"+Date.now(),time:document.getElementById("customTime").value,name,points:+document.getElementById("customPoints").value||5,cat:document.getElementById("customCat").value};
+  log.customTasks.push(task);save();
+  document.getElementById("customName").value="";
+  modal.classList.remove("show");renderAll();
+};
+
+
+// Date/history navigation
+document.getElementById("historyDate")?.addEventListener("change",(e)=>{
+  if(e.target.value) selectDate(dateFromIso(e.target.value));
+});
+document.getElementById("prevDateBtn")?.addEventListener("click",()=>{const d=new Date(selectedDate);d.setDate(d.getDate()-1);selectDate(d);});
+document.getElementById("todayDateBtn")?.addEventListener("click",()=>{selectDate(new Date());});
+document.getElementById("nextDateBtn")?.addEventListener("click",()=>{const d=new Date(selectedDate);d.setDate(d.getDate()+1);selectDate(d);});
+document.getElementById("history7Btn")?.addEventListener("click",()=>{historyRange=7;renderHistory();});
+document.getElementById("history30Btn")?.addEventListener("click",()=>{historyRange=30;renderHistory();});
+document.getElementById("historyAllBtn")?.addEventListener("click",()=>{historyRange="all";renderHistory();});
+
+
+// HSK
+document.getElementById("saveHsk").onclick=()=>{
+  const key=iso(selectedDate);
+  db.hsk[key]={
+    words:+document.getElementById("hskWords").value||0,
+    listen:+document.getElementById("hskListen").value||0,
+    read:+document.getElementById("hskRead").value||0,
+    output:+document.getElementById("hskOutput").value||0
+  };
+  save();renderAll();alert("Өнөөдрийн HSK мэдээлэл хадгалагдлаа.");
+};
+
+// settings
+document.getElementById("saveSettings").onclick=()=>{
+  db.settings.reminderMinutes=+(document.getElementById("pushReminderMinutes")?.value||10);
+  db.settings.wakeTime=document.getElementById("wakeTime").value||"06:00";
+  db.settings.bedTime=document.getElementById("bedTime").value||"22:00";
+  db.settings.morningHsk=+document.getElementById("morningHsk").value||20;
+  db.settings.eveningHsk=+document.getElementById("eveningHsk").value||45;
+  db.settings.gymDays=[...document.querySelectorAll("[data-gym]:checked")].map(x=>+x.dataset.gym);
+  db.settings.reminderMinutes=+(document.getElementById("reminderMinutes")?.value||10);
+  db.settings.notificationMode=document.getElementById("notificationMode")?.value||"on";
+  save();alert("Тохиргоо хадгалагдлаа.");
+};
+
+// data export/import
+document.getElementById("enablePushBtn")?.addEventListener("click", enablePush);
+document.getElementById("syncPushBtn")?.addEventListener("click", ()=>syncPushSchedule(true));
+document.getElementById("testPushBtn")?.addEventListener("click", sendPushTest);
+document.getElementById("disablePushBtn")?.addEventListener("click", disablePush);
+document.getElementById("exportBtn").onclick=()=>{
+  const blob=new Blob([JSON.stringify(db,null,2)],{type:"application/json"});
+  const a=document.createElement("a");a.href=URL.createObjectURL(blob);a.download=`focus-tracker-${iso(new Date())}.json`;
+  document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(a.href),1000);
+};
+document.getElementById("importBtn").onclick=()=>document.getElementById("importFile").click();
+document.getElementById("importFile").onchange=(e)=>{
+  const f=e.target.files[0];if(!f)return;
+  const reader=new FileReader();
+  reader.onload=()=>{try{const d=JSON.parse(reader.result);if(!d.settings||!d.logs)throw new Error("bad");db=d;save();renderAll();alert("JSON backup амжилттай импортлогдлоо.");}catch(err){alert("JSON файл буруу байна.");}};
+  reader.readAsText(f);
+};
+document.getElementById("resetBtn").onclick=()=>{
+  if(confirm("Бүх бүртгэл, HSK data, тохиргоог устгах уу?")){try{localStorage.removeItem(KEY);}catch(e){} location.reload();}
+};
+
+
+
+// ===== Historical records + statistics =====
+let historyRange = 30;
+
+function dateFromIso(key){
+  const [y,m,d]=key.split("-").map(Number);
+  return new Date(y,m-1,d);
+}
+function selectDate(d){
+  selectedDate=new Date(d.getFullYear(),d.getMonth(),d.getDate());
+  selectedDay=getDayByDate(selectedDate);
+  const inp=document.getElementById("historyDate");
+  if(inp) inp.value=iso(selectedDate);
+  renderAll();
+}
+function renderHistory(){
+  const wrap=document.getElementById("historyList");
+  if(!wrap) return;
+  const now=new Date();
+  const seenKeys=new Set(Object.keys(db.logs));
+  // Include the last N days even if not yet logged, so the user can see missing days.
+  const keys=[];
+  const n=historyRange==="all"?Math.max(30, Object.keys(db.logs).length+14):historyRange;
+  for(let i=0;i<n;i++){
+    const d=new Date(now); d.setDate(now.getDate()-i);
+    keys.push(iso(d));
+  }
+  Object.keys(db.logs).forEach(k=>{ if(!keys.includes(k) && historyRange==="all") keys.push(k); });
+  keys.sort((a,b)=>b.localeCompare(a));
+  wrap.innerHTML="";
+  let logged=0;
+  keys.forEach(key=>{
+    const d=dateFromIso(key), di=getDayByDate(d), sc=scoreDay(key,di).normalized;
+    const log=getLog(key), tasks=getTasks(di,key), done=tasks.filter(t=>!!log.done[t.id]).length;
+    const h=db.hsk[key]||{};
+    const hmin=(+h.listen||0)+(+h.read||0)+(+h.output||0);
+    const gym=(tasks.some(t=>t.cat==="Gym"&&log.done[t.id])) ? 1:0;
+    const hasData=done>0 || hmin>0 || (log.customTasks||[]).length>0;
+    if(hasData) logged++;
+    const row=document.createElement("button");
+    row.className="history-row";
+    row.style.cssText="display:block;width:100%;background:transparent;border:0;text-align:left;color:inherit";
+    row.innerHTML=`<div class="row"><div><b>${d.toLocaleDateString("mn-MN",{weekday:"long",year:"numeric",month:"long",day:"numeric"})}</b>
+      <div class="muted" style="margin-top:4px">${done}/${tasks.length} зорилт • HSK ${hmin} мин • Gym ${gym?"✓":"—"}</div></div>
+      <div class="score">${sc}/100</div></div>
+      <div class="progress" style="margin-top:9px"><div style="width:${sc}%"></div></div>`;
+    row.onclick=()=>{selectDate(d); document.querySelector('[data-tab="today"]').click();};
+    wrap.appendChild(row);
+  });
+  if(!logged && historyRange!=="all") {
+    const note=document.createElement("div"); note.className="empty";
+    note.textContent="Одоогоор хадгалагдсан бүртгэл алга. Өдрийн зорилт дээр “Дууссан” дарахад түүх автоматаар үүснэ.";
+    wrap.prepend(note);
+  }
+}
+function renderStats(){
+  const now=new Date(), y=now.getFullYear(), m=now.getMonth();
+  const first=new Date(y,m,1), last=new Date(y,m+1,0);
+  let total=0, perfect=0, wake=0, gym=0, count=last.getDate();
+  const grid=document.getElementById("monthGrid"); grid.innerHTML="";
+  for(let d=1; d<=count; d++){
+    const date=new Date(y,m,d), key=iso(date), di=getDayByDate(date), sc=scoreDay(key,di);
+    total+=sc.normalized; if(sc.normalized>=90) perfect++;
+    const log=getLog(key), tasks=getTasks(di,key);
+    if(tasks.some(t=>t.type==="wake"&&log.done[t.id])) wake++;
+    if(tasks.some(t=>t.cat==="Gym"&&log.done[t.id])) gym++;
+    const cell=document.createElement("button"); cell.className="month-day";
+    cell.innerHTML=`<b>${d}</b><div class="mbar"><span style="width:${sc.normalized}%"></span></div><span>${sc.normalized}</span>`;
+    cell.onclick=()=>{selectDate(date);document.querySelector('[data-tab="today"]').click();};
+    grid.appendChild(cell);
+  }
+  document.getElementById("monthAvg").textContent=Math.round(total/count);
+  document.getElementById("monthLabel").textContent=`${y} оны ${m+1}-р сарын дундаж`;
+  document.getElementById("monthPerfect").textContent=perfect;
+  document.getElementById("monthWake").textContent=wake;
+  document.getElementById("monthGym").textContent=gym;
+  const last30=document.getElementById("last30"); last30.innerHTML="";
+  let avg30=0;
+  for(let i=0;i<30;i++){ const d=new Date(now); d.setDate(now.getDate()-i); avg30+=scoreDate(d); }
+  const avg=Math.round(avg30/30);
+  const a=document.createElement("div"); a.className="statline"; a.innerHTML=`<span>Сүүлийн 30 хоногийн дундаж</span><b>${avg}/100</b>`; last30.appendChild(a);
+  const top=[];
+  for(let i=0;i<30;i++){ const d=new Date(now); d.setDate(now.getDate()-i); top.push([iso(d),scoreDate(d)]); }
+  top.sort((a,b)=>b[1]-a[1]).slice(0,5).forEach(x=>{
+    const el=document.createElement("div"); el.className="statline"; el.innerHTML=`<span>${x[0]}</span><b>${x[1]}/100</b>`; last30.appendChild(el);
+  });
+}
+
+
+
+function pushApiBase(){ return location.origin; }
+function urlBase64ToUint8Array(base64String){
+  const padding='='.repeat((4-base64String.length%4)%4);
+  const base64=(base64String+padding).replace(/-/g,'+').replace(/_/g,'/');
+  const rawData=atob(base64);
+  return Uint8Array.from([...rawData].map(c=>c.charCodeAt(0)));
+}
+function updatePushStatus(){
+  const el=document.getElementById("pushStatus"); if(!el)return;
+  el.textContent=db.settings.pushEnabled?"Асаалттай":"Тохируулаагүй";
+  el.className=db.settings.pushEnabled?"badge health":"badge";
+}
+async function enablePush(){
+  if(!("serviceWorker" in navigator) || !("PushManager" in window) || !("Notification" in window)){
+    alert("Түгжээтэй үеийн Push-д HTTPS URL хэрэгтэй. Локал HTML файл дээр зөвхөн дотоод бүртгэл/оноо ажиллана. Calendar эсвэл HTTPS байршуулсан хувилбарыг ашиглана уу."); return;
+  }
+  if(location.protocol!=="https:" && location.hostname!=="localhost"){
+    alert("Push notification-д HTTPS хэрэгтэй. Web app-аа HTTPS хаягаар байршуулна уу."); return;
+  }
+  const perm=await Notification.requestPermission();
+  if(perm!=="granted"){alert("Notification permission олгогдсонгүй.");return;}
+  try{
+    const reg=await navigator.serviceWorker.ready;
+    const r=await fetch(pushApiBase()+"/api/vapid-public-key");
+    if(!r.ok) throw new Error("VAPID key endpoint failed");
+    const {publicKey}=await r.json();
+    let sub=await reg.pushManager.getSubscription();
+    if(!sub) sub=await reg.pushManager.subscribe({userVisibleOnly:true,applicationServerKey:urlBase64ToUint8Array(publicKey)});
+    const resp=await fetch(pushApiBase()+"/api/subscribe",{method:"POST",headers:{"Content-Type":"application/json"},
+      body:JSON.stringify({subscription:sub.toJSON(),timezone:Intl.DateTimeFormat().resolvedOptions().timeZone})});
+    const subResult=await resp.clone().json().catch(()=>({}));
+    if(subResult.deviceId) db.settings.pushDeviceId=subResult.deviceId;
+    if(!resp.ok) throw new Error(await resp.text());
+    db.settings.pushEnabled=true; save(); await syncPushSchedule(false); updatePushStatus();
+    alert("✅ Push notification идэвхжлээ.");
+  }catch(e){console.error(e);alert("Push холболт амжилтгүй. Push server URL болон HTTPS тохиргоогоо шалгана уу.");}
+}
+async function sendPushTest(){
+  try{
+    const r=await fetch(pushApiBase()+"/api/test",{method:"POST",headers:{"Content-Type":"application/json"}});
+    if(!r.ok) throw new Error(await r.text());
+    const data=await r.json();
+    alert(`Test push илгээгдлээ. ${data.sent||0} subscription-д хүргүүлэхээр сервер авлаа.`);
+  }catch(e){console.error(e);alert("Test push амжилтгүй. Эхлээд Push асааж, app-аа HTTPS дээр нээнэ үү.");}
+}
+async function syncPushSchedule(show=true){
+  const url=pushApiBase(); if(!url) return;
+  try{
+    const tasks=[];
+    const today=new Date();
+    for(let i=0;i<14;i++){
+      const d=new Date(today);d.setDate(today.getDate()+i);
+      const di=getDayByDate(d), key=iso(d);
+      getTasks(di,key).forEach(t=>tasks.push({date:key,time:t.time,end:t.end||null,name:t.name,category:t.cat,points:t.points}));
+    }
+    const r=await fetch(url+"/api/schedule",{method:"POST",headers:{"Content-Type":"application/json"},
+      body:JSON.stringify({timezone:Intl.DateTimeFormat().resolvedOptions().timeZone,
+        reminderMinutes:+(document.getElementById("pushReminderMinutes")?.value||10),
+        tasks,
+        subscription:(await (async()=>{try{const reg=await navigator.serviceWorker.ready; const sub=await reg.pushManager.getSubscription(); return sub?sub.toJSON():null;}catch(e){return null;}})())})});
+    if(!r.ok) throw new Error(await r.text());
+    if(show) alert("✅ Дараагийн 14 хоногийн хуваарь серверт синк хийгдлээ.");
+  }catch(e){console.error(e); if(show) alert("Хуваарь синк хийхэд алдаа гарлаа.");}
+}
+async function disablePush(){
+  try{
+    const reg=await navigator.serviceWorker.ready, sub=await reg.pushManager.getSubscription();
+    if(sub){
+      await fetch(pushApiBase()+"/api/unsubscribe",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({endpoint:sub.endpoint})});
+      await sub.unsubscribe();
+    }
+  }catch(e){}
+  db.settings.pushEnabled=false;save();updatePushStatus();
+}
+
+// ===== Phone clock + notifications + calendar =====
+let reminderTimer = null;
+let notifiedKeys = JSON.parse(localStorage.getItem("focus_notified_v1") || "{}");
+
+function todayScheduleDay() {
+  const d = new Date();
+  return d.getDay() === 0 ? 6 : d.getDay() - 1;
+}
+function todaysTasks() {
+  const now = new Date();
+  return getTasks(todayScheduleDay(), iso(now));
+}
+function minutesNow() {
+  const d = new Date();
+  return d.getHours()*60 + d.getMinutes() + d.getSeconds()/60;
+}
+function taskKey(task) {
+  return `${iso(new Date())}|${todayScheduleDay()}|${task.id}|${task.time}`;
+}
+async function requestNotifications() {
+  if (!("Notification" in window)) {
+    alert("Энэ browser мэдэгдэл дэмжихгүй байна. Chrome/Safari дээр HTTPS сайтаар нээгээд дахин оролдоно уу.");
+    return;
+  }
+  const result = await Notification.requestPermission();
+  updateNotifyButton();
+  if (result === "granted") {
+    await showAppNotification("Focus Tracker", {body:"Мэдэгдэл амжилттай асаалттай боллоо.", tag:"test"});
+  } else {
+    alert("Мэдэгдлийн зөвшөөрөл олгогдсонгүй. Утасныхаа browser/site notification тохиргоог шалгана уу.");
+  }
+}
+async function showAppNotification(title, options={}) {
+  try {
+    if (Notification.permission !== "granted") return;
+    if (navigator.serviceWorker && navigator.serviceWorker.controller) {
+      const reg = await navigator.serviceWorker.ready;
+      await reg.showNotification(title, {
+        body: options.body || "",
+        icon: "icon-192.png",
+        badge: "icon-192.png",
+        tag: options.tag || "focus",
+        data: {url: location.href}
+      });
+    } else {
+      // Fallback for desktop browsers; most mobile browsers require SW.
+      if (!/Android|iPhone|iPad|iPod/i.test(navigator.userAgent)) {
+        new Notification(title, options);
+      }
+    }
+  } catch(e) {}
+}
+function updateNotifyButton() {
+  const b = document.getElementById("notifyBtn");
+  if (!b) return;
+  if (!("Notification" in window)) b.textContent = "Мэдэгдэл дэмжихгүй";
+  else if (Notification.permission === "granted") b.textContent = "✓ Мэдэгдэл асаалттай";
+  else b.textContent = "Мэдэгдэл зөвшөөрөх";
+}
+function updateClock() {
+  const d = new Date();
+  const clock = document.getElementById("liveClock");
+  const cd = document.getElementById("clockDate");
+  if (clock) clock.textContent = d.toLocaleTimeString("mn-MN",{hour12:false});
+  if (cd) cd.textContent = d.toLocaleDateString("mn-MN",{weekday:"long",year:"numeric",month:"long",day:"numeric"});
+  const tasks = todaysTasks().filter(t => !getLog(iso(d)).done[t.id]);
+  const nowM = minutesNow();
+  let next = null, nextDelta = Infinity;
+  for (const t of tasks) {
+    let tm = minutes(t.time);
+    let delta = tm - nowM;
+    if (delta < -1) continue;
+    if (delta < nextDelta) { next=t; nextDelta=delta; }
+  }
+  const nt=document.getElementById("nextTask"), co=document.getElementById("countdown");
+  if (nt && co) {
+    if (!next) { nt.textContent="Өнөөдрийн зорилт дууссан"; co.textContent="Сайн байна!"; }
+    else {
+      nt.textContent=`${next.time} — ${next.name}`;
+      const minsLeft=Math.max(0,Math.floor(nextDelta));
+      co.textContent=minsLeft<1 ? "Одоо эхлэх цаг" : `${minsLeft} минутын дараа`;
+    }
+  }
+}
+async function checkScheduledNotifications() {
+  if (db.settings.notificationMode === "off") return;
+  if (!("Notification" in window) || Notification.permission !== "granted") return;
+  const d=new Date(), keyDate=iso(d), rm=+(db.settings.reminderMinutes ?? 10);
+  const tasks=getTasks(todayScheduleDay(), keyDate);
+  const nowM=d.getHours()*60+d.getMinutes()+d.getSeconds()/60;
+  for (const t of tasks) {
+    const target=minutes(t.time)-rm;
+    const diff=nowM-target;
+    const key=taskKey(t);
+    if (diff>=0 && diff<1.1 && !notifiedKeys[key]) {
+      notifiedKeys[key]=Date.now();
+      localStorage.setItem("focus_notified_v1",JSON.stringify(notifiedKeys));
+      await showAppNotification("⏰ Focus Tracker", {
+        body:`${t.time} — ${t.name} эхлэх цаг. ${rm ? rm+" минутын өмнөх сануулга." : ""}`,
+        tag:"task-"+t.id
+      });
+    }
+  }
+}
+function startClock() {
+  updateClock();
+  clearInterval(reminderTimer);
+  reminderTimer=setInterval(()=>{ updateClock(); checkScheduledNotifications(); }, 15000);
+}
+function makeIcsDate(d) {
+  const pad=n=>String(n).padStart(2,"0");
+  return `${d.getFullYear()}${pad(d.getMonth()+1)}${pad(d.getDate())}T${pad(d.getHours())}${pad(d.getMinutes())}00`;
+}
+function escapeIcs(s) {
+  return s.replace(/\\/g,"\\\\").replace(/;/g,"\\;").replace(/,/g,"\\,").replace(/\n/g,"\\n");
+}
+function exportCalendar() {
+  const now = new Date();
+  const idx = todayScheduleDay();
+  const monday = new Date(now); monday.setDate(now.getDate()-idx);
+  const lines=["BEGIN:VCALENDAR","VERSION:2.0","PRODID:-//Focus Tracker//MN//","CALSCALE:GREGORIAN"];
+  for(let di=0;di<7;di++){
+    const d=new Date(monday); d.setDate(monday.getDate()+di);
+    for(const t of getTasks(di,iso(d))){
+      const [h,m]=t.time.split(":").map(Number);
+      const start=new Date(d.getFullYear(),d.getMonth(),d.getDate(),h,m);
+      let end;
+      if(t.end){ const [eh,em]=t.end.split(":").map(Number); end=new Date(d.getFullYear(),d.getMonth(),d.getDate(),eh,em);}
+      else end=new Date(start.getTime()+30*60000);
+      const uid=`${iso(d)}-${di}-${t.id}@focus-tracker`;
+      lines.push("BEGIN:VEVENT");
+      lines.push(`UID:${uid}`);
+      lines.push(`DTSTAMP:${makeIcsDate(new Date())}`);
+      lines.push(`DTSTART:${makeIcsDate(start)}`);
+      lines.push(`DTEND:${makeIcsDate(end)}`);
+      lines.push(`SUMMARY:${escapeIcs(t.name)}`);
+      lines.push(`DESCRIPTION:${escapeIcs(t.cat+" • "+t.points+" оноо")}`);
+      const rm=+(db.settings.reminderMinutes ?? 10);
+      lines.push("BEGIN:VALARM");
+      lines.push("ACTION:DISPLAY");
+      lines.push(`DESCRIPTION:${escapeIcs("Focus Tracker: "+t.name)}`);
+      lines.push(`TRIGGER:-PT${rm||0}M`);
+      lines.push("END:VALARM");
+      lines.push("END:VEVENT");
+    }
+  }
+  lines.push("END:VCALENDAR");
+  const blob=new Blob([lines.join("\r\n")],{type:"text/calendar;charset=utf-8"});
+  const a=document.createElement("a"); a.href=URL.createObjectURL(blob); a.download="focus-tracker-week.ics";
+  document.body.appendChild(a); a.click(); a.remove(); setTimeout(()=>URL.revokeObjectURL(a.href),1500);
+}
+document.getElementById("notifyBtn")?.addEventListener("click", requestNotifications);
+document.getElementById("testNotifyBtn")?.addEventListener("click", async()=>{
+  if (Notification.permission !== "granted") await requestNotifications();
+  else await showAppNotification("🔔 Focus Tracker тест", {body:"Мэдэгдэл ажиллаж байна.",tag:"manual-test"});
+});
+document.getElementById("calendarBtn")?.addEventListener("click", exportCalendar);
+document.getElementById("reminderMinutes")?.addEventListener("change",(e)=>{db.settings.reminderMinutes=+e.target.value;save();});
+document.getElementById("notificationMode")?.addEventListener("change",(e)=>{db.settings.notificationMode=e.target.value;save();});
+
+// Initialize selectedDate to this Monday so weekday selection works consistently
+(function init(){
+  const now=new Date();
+  selectedDate=new Date(now.getFullYear(),now.getMonth(),now.getDate());
+  if(!db.settings.hskStart) db.settings.hskStart=iso(new Date());
+  if(db.settings.reminderMinutes==null) db.settings.reminderMinutes=10;
+  if(db.settings.notificationMode==null) db.settings.notificationMode="on";
+  save();renderAll();
+  const startup=document.getElementById("startupStatus"); if(startup) startup.style.display="none";
+  const rm=document.getElementById("reminderMinutes"); if(rm) rm.value=String(db.settings.reminderMinutes);
+  const nm=document.getElementById("notificationMode"); if(nm) nm.value=db.settings.notificationMode;
+  updateNotifyButton();
+  updatePushStatus?.();
+  startClock();
+  
+})();
+</script>
+</body>
+</html>
